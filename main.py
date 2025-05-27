@@ -8,6 +8,7 @@ import time
 
 @dataclass
 class car:
+    id: int
     marque: str
     modele: str
     generation: str | None
@@ -74,7 +75,12 @@ def get_specifications(soup):
                      "Anciens propriétaires"]
     
     required_tag_classes = ["col-md-6 mb-3 mb-md-0","col-md-6","box d-none d-md-block"]
-    
+
+    # get the id for the car sale
+    breadcrumps = soup.find("ul", class_="breadcrumbs")
+    id = breadcrumps.find("li",class_="active").text.replace("#","")
+    car_dict["id"] = id
+
     # pre-fill car_dict required fields
     for field in required_data:
         car_dict[remove_accents(field).replace(" ","_")] = ""
@@ -119,6 +125,7 @@ def parse_car_info(soup):
 
     
     new_car = car(
+        id= car_specifications["id"],
         marque= car_specifications["marque"],
         modele= car_specifications["modele"],
         generation= car_specifications["generation"],
@@ -152,14 +159,17 @@ if __name__ == "__main__":
     cars = []
     soup = get_page_source_code(URL)
     cars_url = get_sale_offers(soup)
-    print(cars_url)
-    for url in cars_url:
-        car_soup = get_page_source_code(TEST_CAR)
-        car_sale = parse_car_info(car_soup)
-        print(parse_car_info(car_soup))
-        if car_sale is not None:
-            cars.append(asdict(car_sale))
-            time.sleep(0.5)
-    print(cars)
+    # print(cars_url)
+    car_soup = get_page_source_code(TEST_CAR)
+    print(parse_car_info(car_soup))
+
+    # for url in cars_url:
+    #     car_soup = get_page_source_code(url)
+    #     car_sale = parse_car_info(car_soup)
+    #     print(car_sale)
+    #     if car_sale is not None:
+    #         cars.append(asdict(car_sale))
+    #         time.sleep(0.5)
+    # print(cars)
             
 
