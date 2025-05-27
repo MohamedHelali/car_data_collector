@@ -49,19 +49,6 @@ def remove_accents(text):
     return ''.join([c for c in nfkd_form if not unicodedata.combining(c)]).strip()
 
 
-# needs to be updated to treat the missing values same as get_car_general_info(soup)
-# may require sperate logic for both car_specifications & car_specifications
-
-def get_specifications1(soup,tag_class):
-    car_dict = {}
-    for div in soup.find_all("div", class_= tag_class):
-        if ' '.join(div["class"]).strip() == tag_class:
-            specifications = div.find_all("li")
-            for specification in specifications:
-                details = specification.find_all("span")
-                car_dict[remove_accents(details[0].text).replace(" ","_")] = details[1].text.replace(" ","")
-    return car_dict
-
 def get_specifications(soup):
     car_dict = {}
     # list of required fields for specification
