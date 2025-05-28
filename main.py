@@ -154,22 +154,43 @@ def parse_car_info(soup):
 
     return new_car
 
+def get_next_page(soup):
+    paginator = soup.find("ul", class_="pagination")
+    #print(paginator)
+    if not paginator.select_one("li.page-item.next.disabled"): 
+        return URL + paginator.select_one("li.page-item.next").find("a").get("href").replace("/fr/occasion/","")
+    else:
+        return 
+        
+
 
 if __name__ == "__main__":
     cars = []
-    soup = get_page_source_code(URL)
-    cars_url = get_sale_offers(soup)
-    # print(cars_url)
-    car_soup = get_page_source_code(TEST_CAR)
-    print(parse_car_info(car_soup))
+    url = URL
 
-    # for url in cars_url:
-    #     car_soup = get_page_source_code(url)
-    #     car_sale = parse_car_info(car_soup)
-    #     print(car_sale)
-    #     if car_sale is not None:
-    #         cars.append(asdict(car_sale))
-    #         time.sleep(0.5)
-    # print(cars)
+    # number of web pages that will be scrapped
+    num_pages = 0
+    
+    while True and num_pages <= 2:
+        soup = get_page_source_code(url)
+        cars_url = get_sale_offers(soup)
+        print(cars_url)
+
+        for url in cars_url:
+            car_soup = get_page_source_code(URL+url)
+            car_sale = parse_car_info(car_soup)
+
+            if car_sale is not None:
+                cars.append(asdict(car_sale))
+                time.sleep(0.5)
+
+        # get next page url
+        url += get_next_page(soup)
+        num_pages += 1
+
+        if not url:
+            break
+    
+    print(cars)
             
 
