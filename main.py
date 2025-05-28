@@ -2,14 +2,15 @@ from constants import *
 from bs4 import BeautifulSoup
 import requests
 import lxml
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, fields
 import unicodedata
 import time
 import random
+import csv
 
 
 @dataclass
-class car:
+class Car:
     id: int
     marque: str
     modele: str
@@ -107,6 +108,8 @@ def get_specifications(soup):
                         car_dict[remove_accents(label).replace(" ","_")] = ",".join(value.split()).replace(",km"," km")
                     elif label == "Puissance fiscale":
                         car_dict[remove_accents(label).replace(" ","_")] = " ".join(value.split())
+                    elif label == "Mise en circulation":
+                        car_dict[remove_accents(label).replace(" ","_")] = value.replace(".","-")
                     else:
                         car_dict[remove_accents(label).replace(" ","_")] = remove_accents(value)
 
@@ -117,7 +120,7 @@ def get_specifications(soup):
                     specifications = div.find_all("li")
                     for specification in specifications:
                         details = specification.find_all("span")
-                        car_dict[remove_accents(details[0].text).replace(" ","_")] = details[1].text.replace(" ","")
+                        car_dict[remove_accents(details[0].text).replace(" ","_")] = " ".join(details[1].text.split()).strip()
     return car_dict
                 
 
@@ -126,7 +129,7 @@ def parse_car_info(soup):
     car_specifications = get_specifications(soup)
 
     
-    new_car = car(
+    new_car = Car(
         id= car_specifications["id"],
         marque= car_specifications["marque"],
         modele= car_specifications["modele"],
@@ -164,7 +167,12 @@ def get_next_page(soup):
     else:
         return 
         
-
+def append_to_csv(cars):
+    fields_names = [field.name for field in fields(Car)]
+    with open("outputs/cars.csv","a", encoding= "utf-8") as f:
+        writer = csv.DictWriter(f,fieldnames=fields_names)
+        writer.writerows(cars)
+    print("successfully added data to CSV file")
 
 if __name__ == "__main__":
     cars = []
@@ -177,26 +185,35 @@ if __name__ == "__main__":
     # number of web pages that will be scrapped
     num_pages = 0
     
-    while True and num_pages <= 1: # limit the scrapping for 1 page
-        soup = get_page_source_code(url)
-        cars_url = get_sale_offers(soup)
-        print(cars_url)
+    #set the first page
+    # homepage = URL
+    # while True or num_pages <= 1: # limit the scrapping for 1 page
+    #     soup = get_page_source_code(homepage)
+    #     cars_url = get_sale_offers(soup)
+    #     print(cars_url)
 
-        for url in cars_url:
-            car_soup = get_page_source_code(URL+url)
-            car_sale = parse_car_info(car_soup)
+    #     for url in cars_url:
+    #         car_soup = get_page_source_code(homepage + url)
+    #         car_sale = parse_car_info(car_soup)
+            
+    #         print(car_sale)
 
-            if car_sale is not None:
-                cars.append(asdict(car_sale))
-                time.sleep(delay)
+    #         if car_sale is not None:
+    #             cars.append(asdict(car_sale))
+    #             time.sleep(delay)
 
-        # get next page url
-        url += get_next_page(soup)
-        num_pages += 1
+    #     # get next page url
+    #     homepage = get_next_page(soup)
+    #     num_pages += 1
 
-        if not url:
-            break
+    #     if not homepage:
+    #         break
     
-    print(cars)
+    # print(cars)
+    # append_to_csv(cars)
+
+    car_soup = get_page_source_code(TEST_CAR)
+    car_sale = parse_car_info(car_soup)
+    print(car_sale)
             
 
