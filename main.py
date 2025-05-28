@@ -5,6 +5,8 @@ import lxml
 from dataclasses import dataclass, asdict
 import unicodedata
 import time
+import random
+
 
 @dataclass
 class car:
@@ -52,7 +54,7 @@ def remove_accents(text):
 
 def get_specifications(soup):
     car_dict = {}
-    # list of required fields for specification
+    
     required_data = ["Marque",
                      "Modèle",
                      "Génération",
@@ -168,10 +170,14 @@ if __name__ == "__main__":
     cars = []
     url = URL
 
+    # create a variable delay between requests
+    delay = random.uniform(2, 10)  # 2 to 10 seconds
+    # list of required fields for specification
+
     # number of web pages that will be scrapped
     num_pages = 0
     
-    while True and num_pages <= 2:
+    while True and num_pages <= 1: # limit the scrapping for 1 page
         soup = get_page_source_code(url)
         cars_url = get_sale_offers(soup)
         print(cars_url)
@@ -182,7 +188,7 @@ if __name__ == "__main__":
 
             if car_sale is not None:
                 cars.append(asdict(car_sale))
-                time.sleep(0.5)
+                time.sleep(delay)
 
         # get next page url
         url += get_next_page(soup)
