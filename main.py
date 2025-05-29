@@ -8,6 +8,7 @@ import time
 import random
 import csv
 import argparse
+import re
 
 @dataclass
 class Car:
@@ -34,10 +35,12 @@ class Car:
     anciens_proprietaires: int | None
     prix: int
 
-def get_page_source_code(url):
-    
-    print(url)
-    response = requests.get(url,headers=HEADERS).text
+def get_page_source_code(url,**kwargs):
+    if kwargs.get("page"):
+        print(url + str(kwargs.get("page")))
+        response = requests.get(url + str(kwargs.get("page")),headers=HEADERS).text
+    else:
+        response = requests.get(url,headers=HEADERS).text
     soup = BeautifulSoup(response,"lxml")
     return soup
 
@@ -164,16 +167,23 @@ def get_next_page(soup):
     paginator = soup.find("ul", class_="pagination")
     #print(paginator)
     if not paginator.select_one("li.page-item.next.disabled"): 
-        return URL + paginator.select_one("li.page-item.next").find("a").get("href").replace("/fr/occasion/","")
+        return re.sub(r".*/", "", paginator.select_one("li.page-item.next").find("a").get("href")) #.replace("/fr/occasion/","").replace("s=brand%21%3Avolkswagen/","")
     else:
         return 
         
-def append_to_csv(cars):
-    fields_names = [field.name for field in fields(Car)]
-    with open("outputs/cars.csv","a", encoding= "utf-8") as f:
-        writer = csv.DictWriter(f,fieldnames=fields_names)
-        writer.writerows(cars)
-    print("successfully added data to CSV file")
+def append_to_csv(cars,marque=""):
+    if marque:
+        fields_names = [field.name for field in fields(Car)]
+        with open(f"outputs/cars_{marque}.csv","a", encoding= "utf-8") as f:
+            writer = csv.DictWriter(f,fieldnames=fields_names)
+            writer.writerows(cars)
+        print("successfully added data to CSV file")
+    else:
+        fields_names = [field.name for field in fields(Car)]
+        with open("outputs/cars.csv","a", encoding= "utf-8") as f:
+            writer = csv.DictWriter(f,fieldnames=fields_names)
+            writer.writerows(cars)
+        print("successfully added data to CSV file")
 
 def main(marque=None):
     cars = []
@@ -181,8 +191,9 @@ def main(marque=None):
     url = URL
     
     if marque:
-        url += f"?s=brand!:{marque.lower()}"
+        url += f"s=brand!:{marque.lower()}/"
         print(url)
+        # exit(1)
 
     # create a variable delay between requests
     delay = random.uniform(2, 10)  # 2 to 10 seconds
@@ -191,17 +202,22 @@ def main(marque=None):
     num_pages = 0
     
     #set the first page for scarpping
+    homepage = url
+    current_page = 1
 
-    homepage = URL
     while True:
-        soup = get_page_source_code(homepage)
+        soup = get_page_source_code(homepage, page = current_page)
         cars_url = get_sale_offers(soup)
+        
+        # homepage = URL
+        
+        print(cars_url)
 
         for url in cars_url:
             print(homepage + url)
             car_soup = get_page_source_code(homepage + url)
             car_sale = parse_car_info(car_soup)
-            
+
             print(car_sale)
 
             if car_sale is not None:
@@ -209,20 +225,25 @@ def main(marque=None):
                 time.sleep(delay)
 
         # get next page url
-        homepage = get_next_page(soup)
+        current_page = get_next_page(soup)
+        print(current_page)
         num_pages += 1
 
-        if not homepage or num_pages == 11:
+        if not current_page or num_pages == 2:
             break
     
     print(cars)
-    append_to_csv(cars)
+    append_to_csv(cars,marque)
     
 
 def test():
     car_soup = get_page_source_code(TEST_CAR2)
     car_sale = parse_car_info(car_soup)
     print(car_sale)
+    
+def test_next_page():
+    soup = get_page_source_code(URL)
+    print(get_next_page(soup))
 
 if __name__ == "__main__":
 
@@ -230,8 +251,10 @@ if __name__ == "__main__":
     parser.add_argument("--marque", type=str, help="Brand filter for car scraping (e.g., 'Toyota')")
     args = parser.parse_args()
 
-    # main(marque=args.marque)
-    test()
+    main(marque=args.marque)
+    
+    # test()
+    # test_next_page()
 
     
             
