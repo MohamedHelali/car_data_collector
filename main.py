@@ -7,7 +7,7 @@ import unicodedata
 import time
 import random
 import csv
-
+import argparse
 
 @dataclass
 class Car:
@@ -34,19 +34,20 @@ class Car:
     anciens_proprietaires: int | None
     prix: int
 
-def get_page_source_code(url, **kwargs):
-    if kwargs.get("page"):
-        html_text = requests.get(url+"/"+str(kwargs.get("page"))).text
-    else:
-        html_text = requests.get(url).text
-    soup = BeautifulSoup(html_text,"lxml")
+def get_page_source_code(url):
+    
+    print(url)
+    response = requests.get(url,headers=HEADERS).text
+    soup = BeautifulSoup(response,"lxml")
     return soup
 
 def get_sale_offers(soup):
+    
     cars_urls = [car["href"].replace("/fr/occasion/","") for car in soup.find_all("a",class_="occasion-link-overlay")]
     return cars_urls
 
 def remove_accents(text):
+    
     # Normalize to NFKD form, which separates characters from their accents
     nfkd_form = unicodedata.normalize('NFKD', text.lower())
     # Filter out combining characters (i.e., accents)
@@ -174,46 +175,64 @@ def append_to_csv(cars):
         writer.writerows(cars)
     print("successfully added data to CSV file")
 
-if __name__ == "__main__":
+def main(marque=None):
     cars = []
+
     url = URL
+    
+    if marque:
+        url += f"?s=brand!:{marque.lower()}"
+        print(url)
 
     # create a variable delay between requests
     delay = random.uniform(2, 10)  # 2 to 10 seconds
-    # list of required fields for specification
 
-    # number of web pages that will be scrapped
+    # count the number of web pages that will be scrapped
     num_pages = 0
     
-    #set the first page
-    # homepage = URL
-    # while True or num_pages <= 1: # limit the scrapping for 1 page
-    #     soup = get_page_source_code(homepage)
-    #     cars_url = get_sale_offers(soup)
-    #     print(cars_url)
+    #set the first page for scarpping
 
-    #     for url in cars_url:
-    #         car_soup = get_page_source_code(homepage + url)
-    #         car_sale = parse_car_info(car_soup)
+    homepage = URL
+    while True:
+        soup = get_page_source_code(homepage)
+        cars_url = get_sale_offers(soup)
+
+        for url in cars_url:
+            print(homepage + url)
+            car_soup = get_page_source_code(homepage + url)
+            car_sale = parse_car_info(car_soup)
             
-    #         print(car_sale)
+            print(car_sale)
 
-    #         if car_sale is not None:
-    #             cars.append(asdict(car_sale))
-    #             time.sleep(delay)
+            if car_sale is not None:
+                cars.append(asdict(car_sale))
+                time.sleep(delay)
 
-    #     # get next page url
-    #     homepage = get_next_page(soup)
-    #     num_pages += 1
+        # get next page url
+        homepage = get_next_page(soup)
+        num_pages += 1
 
-    #     if not homepage:
-    #         break
+        if not homepage or num_pages == 11:
+            break
     
-    # print(cars)
-    # append_to_csv(cars)
+    print(cars)
+    append_to_csv(cars)
+    
 
-    car_soup = get_page_source_code(TEST_CAR)
+def test():
+    car_soup = get_page_source_code(TEST_CAR2)
     car_sale = parse_car_info(car_soup)
     print(car_sale)
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description="Car scraper with optional marque filter.")
+    parser.add_argument("--marque", type=str, help="Brand filter for car scraping (e.g., 'Toyota')")
+    args = parser.parse_args()
+
+    # main(marque=args.marque)
+    test()
+
+    
             
 
