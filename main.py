@@ -125,7 +125,7 @@ def get_specifications(soup):
                     specifications = div.find_all("li")
                     for specification in specifications:
                         details = specification.find_all("span")
-                        car_dict[remove_accents(details[0].text).replace(" ","_")] = " ".join(details[1].text.split()).strip()
+                        car_dict[remove_accents(details[0].text).replace(" ","_")] = remove_accents(" ".join(details[1].text.split()).strip().replace("-"," "))
     return car_dict
                 
 
@@ -187,23 +187,34 @@ def append_to_csv(car,marque=""):
         writer.writerow(car)
         print("successfully added data to CSV file")
 
+def store_last_scrapped_page(current_page):
+    with open("last_page.txt","w") as f:
+        f.write(str(current_page))
+
+def resume_scrapping():
+    try:
+        with open("last_page.txt","r") as f:
+            content = f.read().strip()
+            return int(content) + 1 if content.isdigit() else 1
+    except FileNotFoundError:
+        return 1
+
 def main(marque=None):
-    
+
     url = URL
     
     if marque:
         url += f"s=brand!:{marque.lower()}/"
-        print(url)
+        #print(url)
+    
+
 
     # create a variable delay between requests
     delay = random.uniform(2, 10)  # 2 to 10 seconds
-
-    # count the number of web pages that will be scrapped
-    num_pages = 0
     
     #set the first page for scarpping
     homepage = url
-    current_page = 1
+    current_page = resume_scrapping()
 
     while True:
         soup = get_page_source_code(homepage, page = current_page)
@@ -222,17 +233,21 @@ def main(marque=None):
                 append_to_csv(asdict(car_sale),marque)
                 time.sleep(delay)
 
+
+        #store the current scrapped page for resume support
+        store_last_scrapped_page(current_page)
+
         # get next page url
         current_page = get_next_page(soup)
         print(current_page)
-        num_pages += 1
+
 
         if not current_page: 
             break
     
 
 def test():
-    car_soup = get_page_source_code(TEST_CAR2)
+    car_soup = get_page_source_code(TEST_CAR)
     car_sale = parse_car_info(car_soup)
     print(car_sale)
     

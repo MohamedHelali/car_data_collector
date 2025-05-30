@@ -1,7 +1,7 @@
 URL = "https://www.automobile.tn/fr/occasion/"
 TEST_CAR = "https://www.automobile.tn/fr/occasion/mercedes-benz/classe-e/109043"
 TEST_CAR2 = "https://www.automobile.tn/fr/occasion/volkswagen/touareg/114230"
-
+TEST_CAR3 = "https://www.automobile.tn/fr/occasion/s=brand!:citroen/citroen/jumpy-fourgon/114341"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
