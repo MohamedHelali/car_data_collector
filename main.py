@@ -9,6 +9,7 @@ import random
 import csv
 import argparse
 import re
+import os
 
 @dataclass
 class Car:
@@ -171,29 +172,28 @@ def get_next_page(soup):
     else:
         return 
         
-def append_to_csv(cars,marque=""):
+def append_to_csv(car,marque=""):
+    file_name = f"outputs/cars.csv"
     if marque:
-        fields_names = [field.name for field in fields(Car)]
-        with open(f"outputs/cars_{marque}.csv","a", encoding= "utf-8") as f:
-            writer = csv.DictWriter(f,fieldnames=fields_names)
-            writer.writerows(cars)
-        print("successfully added data to CSV file")
-    else:
-        fields_names = [field.name for field in fields(Car)]
-        with open("outputs/cars.csv","a", encoding= "utf-8") as f:
-            writer = csv.DictWriter(f,fieldnames=fields_names)
-            writer.writerows(cars)
+        file_name = f"outputs/cars_{marque}.csv"
+    
+    file_exists = os.path.isfile(file_name)
+
+    fields_names = [field.name for field in fields(Car)]
+    with open(file_name,"a", encoding= "utf-8") as f:
+        writer = csv.DictWriter(f,fieldnames=fields_names)
+        if not file_exists:
+            writer.writeheader()
+        writer.writerow(car)
         print("successfully added data to CSV file")
 
 def main(marque=None):
-    cars = []
-
+    
     url = URL
     
     if marque:
         url += f"s=brand!:{marque.lower()}/"
         print(url)
-        # exit(1)
 
     # create a variable delay between requests
     delay = random.uniform(2, 10)  # 2 to 10 seconds
@@ -209,8 +209,6 @@ def main(marque=None):
         soup = get_page_source_code(homepage, page = current_page)
         cars_url = get_sale_offers(soup)
         
-        # homepage = URL
-        
         print(cars_url)
 
         for url in cars_url:
@@ -221,7 +219,7 @@ def main(marque=None):
             print(car_sale)
 
             if car_sale is not None:
-                cars.append(asdict(car_sale))
+                append_to_csv(asdict(car_sale),marque)
                 time.sleep(delay)
 
         # get next page url
@@ -229,11 +227,8 @@ def main(marque=None):
         print(current_page)
         num_pages += 1
 
-        if not current_page or num_pages == 2:
+        if not current_page: 
             break
-    
-    print(cars)
-    append_to_csv(cars,marque)
     
 
 def test():
