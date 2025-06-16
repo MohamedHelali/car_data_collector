@@ -173,6 +173,9 @@ def get_next_page(soup):
         return 
         
 def append_to_csv(car,marque=""):
+    if not os.path.exists("outputs"):
+        os.makedirs("outputs")
+
     file_name = f"outputs/cars.csv"
     if marque:
         file_name = f"outputs/cars_{marque}.csv"
